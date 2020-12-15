@@ -8,7 +8,8 @@ RUN apt-get -q -y update \
     && rm -rf /var/lib/apt/lists/* 
 
 WORKDIR /app
-ADD . /app/
+
+ADD Gemfile Gemfile.lock hubsync.rb /app/
 
 RUN set -uex; \
     bundle install
