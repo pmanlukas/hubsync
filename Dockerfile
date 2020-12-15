@@ -1,12 +1,15 @@
 FROM ruby:2.6.6-slim
 
 WORKDIR /app
-ADD . /app/
+
 RUN apt-get -q -y update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     ssh \
-    git
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+ADD Gemfile hubsync.rb /app/
 
 RUN set -uex; \
     bundle install
