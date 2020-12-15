@@ -3,14 +3,14 @@
 # Syncs all repositories of a user/organization on a GitHub Enterprise instance to a user/organization of another GitHub Enterprise instance.
 #
 # Usage:
-# ./hubsync.rb <source github enterprise url>           \
-#              <source github enterprise token>         \
-#              <source github enterprise organization>  \
-#              <targert github enterprise url>          \
-#              <targert github enterprise token>        \
-#              <targert github enterprise organization> \
-#              <repository-cache-path>                  \
-#              [<repository-to-sync>]
+# ./hubsync.rb --ghes-source-url=<source github enterprise url>     \
+#              --ghes-source-token=<source github enterprise token> \
+#              --source-org=<source github enterprise organization> \
+#              --ghes-target-url=<target github enterprise url>     \
+#              --ghes-target-token=<target github enterprise token> \
+#              --target-org=<target github enterprise organization>  \
+#              --cache-path=<repository-cache-path>                 \
+#              [--repo-name=<repository-to-sync>]
 
 #
 # Note:
@@ -23,6 +23,7 @@ require 'octokit'
 require 'git'
 require 'fileutils'
 require 'timeout'
+require 'optparse'
 
 
 module Git
@@ -202,25 +203,97 @@ def sync(clients, source_organization, target_organization, repo_name, cache_pat
     end
 end
 
+Options = Struct.new(
+    :ghes_source_url,
+    :ghes_source_token,
+    :source_organization,
+    :ghes_target_url,
+    :ghes_target_token,
+    :target_organization,
+    :cache_path,
+    :repo_name
+    )
+
+def parseCommandLine(options)
+    args = Options.new
+
+    opt_parser = OptionParser.new do |opts|
+        opts.banner = "Usage: hubsync.rb [options]"
+
+        opts.on("--ghes-source-url=URL") do |v|
+            args.ghes_source_url = v
+        end
+
+        opts.on("--ghes-source-token=TOKEN") do |v|
+            args.ghes_source_token = v
+        end
+
+        opts.on("--source-org=ORG_NAME") do |v|
+            args.source_organization = v
+        end
+
+        opts.on("--ghes-target-url=URL") do |v|
+            args.ghes_target_url = v
+        end
+
+        opts.on("--ghes-target-token=TOKEN") do |v|
+            args.ghes_target_token = v
+        end
+
+        opts.on("--target-org=ORG_NAME") do |v|
+            args.target_organization = v
+        end
+
+        opts.on("--cache-path=PATH") do |v|
+            args.cache_path = v
+        end
+
+        opts.on("--repo-name=NAME") do |v|
+            args.repo_name = v
+        end
+    end
+
+    opt_parser.parse!()
+
+    missing = false
+    args.each_pair do |name, value|
+        if name.to_s != "repo_name"
+            if value.nil?
+                puts("Missing value for parameter; " + name.to_s)
+                missing = true
+            end
+        end
+    end
+
+    if missing
+        puts(opt_parser)
+        exit 1
+    end
+
+    return args
+end
+
 
 if $0 == __FILE__
-    ghes_source_url = ARGV[0]
-    ghes_source_token = ARGV[1]
-    source_organization = ARGV[2]
+    args = parseCommandLine(ARGV)
 
-    ghes_target_url = ARGV[3]
-    ghes_target_token = ARGV[4]
-    target_organization = ARGV[5]
-
-    cache_path = ARGV[6]
-    repo_name = ARGV[7]
-
-    clients = init_github_clients(ghes_source_token, ghes_source_url, ghes_target_token, ghes_target_url)
+    clients = init_github_clients(
+        args.ghes_source_token,
+        args.ghes_source_url,
+        args.ghes_target_token,
+        args.ghes_target_url
+    )
 
     while true do
         sleep(1)
         begin
-            sync(clients, source_organization, target_organization, repo_name, cache_path)
+            sync(
+                clients,
+                args.source_organization,
+                args.target_organization,
+                args.repo_name,
+                args.cache_path
+            )
         rescue SystemExit, Interrupt
             raise
         rescue Exception => e
