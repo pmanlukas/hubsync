@@ -13,7 +13,7 @@ RUN set -uex; \
 
 CMD ["sh","-c","./hubsync.rb","${SRC_GHURL}","${SRC_GHTOKEN}","${SRC_GHORG}","${TRG_GHURL}","${TRG_GHTOKEN}","${TRG_GHORG}","${REPO_CACHE_PATH}","${REPO}"]
 
-# ADD those ENV to env.list file and run with docker run ... --env-file ./env.list
+# ADD those ENV to env.list file and run with docker run ... --env-file env.txt
 #
 # ./hubsync.rb <source github enterprise url>           \
 #              <source github enterprise token>         \
