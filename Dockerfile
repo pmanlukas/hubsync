@@ -9,7 +9,7 @@ RUN apt-get -q -y update && \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-ADD Gemfile hubsync.rb /app/
+ADD Gemfile Gemfile.lock hubsync.rb /app/
 
 RUN set -uex; \
     bundle install
